@@ -1,0 +1,57 @@
+// pricing.js
+const FAQS = [
+  { q: 'Is there really no credit card required for the free trial?', a: 'Correct. You can sign up and use the full Pro plan for 14 days without entering any payment information. We\'ll ask for a card only if you choose to continue after the trial.' },
+  { q: 'Can I cancel anytime?', a: 'Yes. Cancel anytime from your account settings with one click. No cancellation fees, no questions asked. If you cancel mid-period, you keep access until the end of your billing cycle.' },
+  { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex), PayPal, and bank transfers for annual plans. All payments are processed securely via Stripe.' },
+  { q: 'Is the market data real-time?', a: 'The Pro plan includes 15-minute delayed data. The Elite plan includes real-time streaming data. The Starter plan includes end-of-day data only.' },
+  { q: 'Can I switch plans later?', a: 'Absolutely. You can upgrade or downgrade at any time. Upgrades take effect immediately and are prorated. Downgrades take effect at the start of the next billing cycle.' },
+  { q: 'Is this financial advice?', a: 'No. TradeEdge Pro provides educational content and analytical tools only. Nothing on this platform constitutes financial advice. Always do your own research and consult a licensed financial advisor.' },
+];
+
+let billingMode = 'monthly';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPage('pricing.html');
+  buildTicker('ticker');
+  renderFAQs();
+
+  document.getElementById('monthlyBtn')?.addEventListener('click', () => {
+    billingMode = 'monthly';
+    document.getElementById('monthlyBtn').classList.add('active');
+    document.getElementById('annualBtn').classList.remove('active');
+    updatePrices();
+  });
+  document.getElementById('annualBtn')?.addEventListener('click', () => {
+    billingMode = 'annual';
+    document.getElementById('annualBtn').classList.add('active');
+    document.getElementById('monthlyBtn').classList.remove('active');
+    updatePrices();
+  });
+});
+
+function updatePrices() {
+  document.querySelectorAll('.pp-amount').forEach(el => {
+    const val = el.dataset[billingMode];
+    el.textContent = val === '0' ? '$0' : `$${val}`;
+  });
+}
+
+function renderFAQs() {
+  const list = document.getElementById('faqList');
+  if (!list) return;
+  list.innerHTML = FAQS.map((f, i) => `
+    <div class="faq-item" id="faq-${i}">
+      <div class="faq-q" onclick="toggleFAQ(${i})">
+        <span>${f.q}</span>
+        <span class="faq-icon">+</span>
+      </div>
+      <div class="faq-a">${f.a}</div>
+    </div>`).join('');
+}
+
+function toggleFAQ(i) {
+  const item = document.getElementById(`faq-${i}`);
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+  if (!wasOpen) item.classList.add('open');
+}

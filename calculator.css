@@ -1,0 +1,157 @@
+// calculator.js
+let direction = 'long';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPage('calculator.html');
+  buildTicker('ticker');
+
+  // Direction toggle
+  document.getElementById('longBtn')?.addEventListener('click', () => {
+    direction = 'long';
+    document.getElementById('longBtn').classList.add('active');
+    document.getElementById('shortBtn').classList.remove('active');
+  });
+  document.getElementById('shortBtn')?.addEventListener('click', () => {
+    direction = 'short';
+    document.getElementById('shortBtn').classList.add('active');
+    document.getElementById('longBtn').classList.remove('active');
+  });
+
+  document.getElementById('calcBtn')?.addEventListener('click', calcPosition);
+  document.getElementById('compBtn')?.addEventListener('click', calcCompound);
+  document.getElementById('wrBtn')?.addEventListener('click', calcWinRate);
+  document.getElementById('r72Btn')?.addEventListener('click', calcR72);
+
+  // Live R/R visualizer update
+  ['entry','stop','target'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateRRBar);
+  });
+});
+
+function calcPosition() {
+  const account = parseFloat(document.getElementById('account').value);
+  const riskPct = parseFloat(document.getElementById('riskPct').value);
+  const entry   = parseFloat(document.getElementById('entry').value);
+  const stop    = parseFloat(document.getElementById('stop').value);
+  const target  = parseFloat(document.getElementById('target').value);
+
+  if (!account || !riskPct || !entry || !stop) {
+    alert('Please fill in account size, risk %, entry, and stop loss.'); return;
+  }
+
+  const riskAmt    = account * riskPct / 100;
+  const riskPerSh  = Math.abs(entry - stop);
+  if (riskPerSh === 0) { alert('Entry and stop loss cannot be the same.'); return; }
+  const shares     = Math.floor(riskAmt / riskPerSh);
+  const posVal     = shares * entry;
+  const pctAcct    = (posVal / account * 100).toFixed(1);
+
+  let rrHTML = '';
+  if (target && !isNaN(target)) {
+    const rewardPer = Math.abs(target - entry);
+    const rr = (rewardPer / riskPerSh).toFixed(2);
+    const profitAmt = (shares * rewardPer).toFixed(2);
+    rrHTML = `
+      <div class="res-row highlight"><span>Risk/Reward Ratio</span><strong>${rr}:1</strong></div>
+      <div class="res-row"><span>Potential Profit</span><strong style="color:var(--green)">+$${parseFloat(profitAmt).toLocaleString()}</strong></div>`;
+  }
+
+  document.getElementById('calcResult').style.display = 'block';
+  document.getElementById('calcResult').innerHTML = `
+    <div class="res-row"><span>Dollar Risk</span><strong>$${riskAmt.toFixed(2)}</strong></div>
+    <div class="res-row"><span>Risk Per Share</span><strong>$${riskPerSh.toFixed(2)}</strong></div>
+    <div class="res-row highlight"><span>Shares to Buy</span><strong>${shares.toLocaleString()} shares</strong></div>
+    <div class="res-row"><span>Total Position Value</span><strong>$${posVal.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></div>
+    <div class="res-row"><span>% of Account</span><strong>${pctAcct}%</strong></div>
+    ${rrHTML}
+    <div class="res-row ${riskPct > 5 ? 'danger' : ''}">
+      <span>Risk Warning</span>
+      <strong>${riskPct > 5 ? '⚠️ High Risk' : riskPct > 2 ? '⚡ Moderate' : '✅ Conservative'}</strong>
+    </div>`;
+
+  updateRRBar();
+}
+
+function updateRRBar() {
+  const entry  = parseFloat(document.getElementById('entry')?.value);
+  const stop   = parseFloat(document.getElementById('stop')?.value);
+  const target = parseFloat(document.getElementById('target')?.value);
+
+  const riskEl   = document.getElementById('rrRisk');
+  const rewardEl = document.getElementById('rrReward');
+  const ratioEl  = document.getElementById('rrRatioDisplay');
+  const stopLbl  = document.getElementById('rrStop');
+  const entryLbl = document.getElementById('rrEntry');
+  const tgtLbl   = document.getElementById('rrTarget');
+
+  if (!entry || !stop || !target || isNaN(entry) || isNaN(stop) || isNaN(target)) {
+    if (ratioEl) ratioEl.textContent = 'Set entry, stop, and target to see R/R';
+    return;
+  }
+
+  const risk   = Math.abs(entry - stop);
+  const reward = Math.abs(target - entry);
+  const total  = risk + reward;
+  const riskW  = (risk / total * 100).toFixed(1);
+  const rewW   = (reward / total * 100).toFixed(1);
+  const rr     = (reward / risk).toFixed(2);
+
+  if (riskEl) riskEl.style.width = `${riskW}%`;
+  if (rewardEl) rewardEl.style.width = `${rewW}%`;
+  if (ratioEl) ratioEl.textContent = `Risk/Reward: 1:${rr} — ${rr >= 2 ? '✅ Good setup' : rr >= 1 ? '⚡ Acceptable' : '⚠️ Poor R/R'}`;
+  if (stopLbl) stopLbl.textContent = `$${stop}`;
+  if (entryLbl) entryLbl.textContent = `$${entry}`;
+  if (tgtLbl) tgtLbl.textContent = `$${target}`;
+}
+
+function calcCompound() {
+  const start  = parseFloat(document.getElementById('compStart').value);
+  const rate   = parseFloat(document.getElementById('compRate').value) / 100;
+  const months = parseInt(document.getElementById('compMonths').value);
+
+  if (!start || !rate || !months) { alert('Please fill in all fields.'); return; }
+
+  const final   = start * Math.pow(1 + rate, months);
+  const profit  = final - start;
+  const totalPct = ((final - start) / start * 100).toFixed(1);
+
+  // Milestones
+  let milestones = '';
+  [3, 6, 12, 24].filter(m => m <= months).forEach(m => {
+    const v = (start * Math.pow(1 + rate, m)).toFixed(2);
+    milestones += `<div class="comp-row"><span>${m} months</span><strong>$${parseFloat(v).toLocaleString()}</strong></div>`;
+  });
+
+  document.getElementById('compResult').style.display = 'block';
+  document.getElementById('compResult').innerHTML = `
+    ${milestones}
+    <div class="comp-row big"><span>Final Value (${months}mo)</span><strong>$${final.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></div>
+    <div class="comp-row"><span>Total Profit</span><strong style="color:var(--green)">+$${profit.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></div>
+    <div class="comp-row"><span>Total Return</span><strong style="color:var(--green)">+${totalPct}%</strong></div>`;
+}
+
+function calcWinRate() {
+  const rr = parseFloat(document.getElementById('rrInput').value);
+  if (!rr || rr <= 0) { alert('Please enter a valid R/R ratio.'); return; }
+
+  const breakeven = (1 / (1 + rr) * 100).toFixed(1);
+
+  document.getElementById('wrResult').style.display = 'block';
+  document.getElementById('wrResult').innerHTML = `
+    <span class="wr-num">${breakeven}%</span>
+    <span class="wr-sub">Minimum win rate needed to break even with a ${rr}:1 R/R ratio.<br/>
+    Win more than this and you're profitable long-term.</span>`;
+}
+
+function calcR72() {
+  const rate = parseFloat(document.getElementById('r72Input').value);
+  if (!rate || rate <= 0) { alert('Please enter a valid return rate.'); return; }
+
+  const years = (72 / rate).toFixed(1);
+
+  document.getElementById('r72Result').style.display = 'block';
+  document.getElementById('r72Result').innerHTML = `
+    <span class="r72-num">${years} years</span>
+    <span class="r72-sub">At ${rate}% annual return, your account doubles in ~${years} years.<br/>
+    At 20%/yr: 3.6 years. At 50%/yr: 1.4 years.</span>`;
+}

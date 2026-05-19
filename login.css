@@ -1,0 +1,75 @@
+// tips.js
+const TIPS_DATA = [
+  { cat:'risk', title:'The 1-2% Rule', body:'Never risk more than 1–2% of your total account on a single trade. 10 losses in a row and you\'re still in the game.', img:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=70' },
+  { cat:'psychology', title:'Control Your Emotions', body:'Fear and greed are your biggest enemies. If a trade makes you anxious, your size is too large. Reduce until calm.', img:'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=400&q=70' },
+  { cat:'strategy', title:'Always Use a Stop Loss', body:'Define your exit before you enter. A stop loss removes emotion from the equation and protects your capital automatically.', img:'https://images.unsplash.com/photo-1642790551116-18e150f248e3?w=400&q=70' },
+  { cat:'analysis', title:'Trade With the Trend', body:'The trend is your friend. In a strong uptrend, only take long setups. Fighting the trend dramatically lowers your win rate.', img:'https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=400&q=70' },
+  { cat:'risk', title:'Risk/Reward Ratio', body:'Only take trades where potential reward is at least 2x your risk. With 2:1 R/R, you can be wrong 50% of the time and still profit.', img:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=70' },
+  { cat:'psychology', title:'Keep a Trade Journal', body:'Log every trade: entry, exit, reason, result, emotion. Weekly reviews reveal patterns in both the market and your own psychology.', img:'https://images.unsplash.com/photo-1434626881859-194d67b2b86f?w=400&q=70' },
+  { cat:'strategy', title:'Don\'t Overtrade', body:'Quality over quantity. Most professional traders take only 2–5 high-conviction trades per week. Wait for A+ setups.', img:'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&q=70' },
+  { cat:'analysis', title:'Respect Support & Resistance', body:'Price memory is real. Key S/R levels act as magnets. Identify them on higher timeframes, then drill down for precise entries.', img:'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&q=70' },
+  { cat:'strategy', title:'Cut Losers, Let Winners Run', body:'Most traders do the opposite. Train yourself to hold winning trades and cut losers quickly. This single habit changes everything.', img:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=70' },
+  { cat:'crypto', title:'Bitcoin Dominance', body:'Watch BTC dominance as a macro indicator. Rising dominance often signals altcoin weakness; falling dominance signals altseason.', img:'https://images.unsplash.com/photo-1622630998477-20aa696ecb05?w=400&q=70' },
+  { cat:'crypto', title:'Never Trade on FOMO', body:'The worst crypto trades happen during parabolic runs when FOMO peaks. Discipline means sitting out when emotion peaks.', img:'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&q=70' },
+  { cat:'analysis', title:'Volume Confirms Price', body:'Price moves on high volume are more significant than low-volume moves. Always check volume before entering a breakout trade.', img:'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?w=400&q=70' },
+];
+
+const QUOTES = [
+  { text: '"The market is a device for transferring money from the impatient to the patient."', author: '— Warren Buffett' },
+  { text: '"In trading, the goal is not to be right. The goal is to make money."', author: '— Marty Schwartz' },
+  { text: '"It\'s not whether you\'re right or wrong, but how much you make when right."', author: '— George Soros' },
+  { text: '"The key to trading success is emotional discipline."', author: '— Victor Sperandeo' },
+  { text: '"Cut your losses short and let your profits run."', author: '— Classic Trading Maxim' },
+  { text: '"Risk comes from not knowing what you\'re doing."', author: '— Warren Buffett' },
+];
+
+let activeFilter = 'all';
+let quoteIdx = 0;
+
+function renderTips(filter) {
+  const grid = document.getElementById('tipsGrid');
+  if (!grid) return;
+  const data = filter === 'all' ? TIPS_DATA : TIPS_DATA.filter(t => t.cat === filter);
+  grid.innerHTML = data.map((t, i) => `
+    <div class="tip-card anim-up" style="animation-delay:${i*0.05}s">
+      <img class="tc-img" src="${t.img}" alt="${t.title}" loading="lazy"/>
+      <div class="tc-top">
+        <span class="tc-num">// TIP ${String(i+1).padStart(2,'0')}</span>
+        <span class="badge badge-${catColor(t.cat)}">${t.cat}</span>
+      </div>
+      <h3>${t.title}</h3>
+      <p>${t.body}</p>
+    </div>
+  `).join('');
+}
+
+function catColor(cat) {
+  return { risk:'red', psychology:'green', strategy:'gold', analysis:'blue', crypto:'gold' }[cat] || 'gold';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPage('tips.html');
+  buildTicker('ticker');
+  renderTips('all');
+
+  document.getElementById('tipsFilter')?.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTips(btn.dataset.cat);
+  });
+
+  document.getElementById('newQuoteBtn')?.addEventListener('click', () => {
+    quoteIdx = (quoteIdx + 1) % QUOTES.length;
+    const q = QUOTES[quoteIdx];
+    const t = document.getElementById('quoteText');
+    const a = document.getElementById('quoteAuthor');
+    t.style.opacity = '0'; a.style.opacity = '0';
+    setTimeout(() => {
+      t.textContent = q.text; a.textContent = q.author;
+      t.style.transition = 'opacity 0.4s'; a.style.transition = 'opacity 0.4s';
+      t.style.opacity = '1'; a.style.opacity = '1';
+    }, 200);
+  });
+});

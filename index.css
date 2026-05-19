@@ -1,0 +1,216 @@
+// markets.js
+const STOCKS = [
+  { sym:'AAPL',  name:'Apple Inc.',           price:213.50, vol:'54.2M', high52:237.23 },
+  { sym:'MSFT',  name:'Microsoft Corp.',       price:425.10, vol:'22.1M', high52:468.35 },
+  { sym:'NVDA',  name:'NVIDIA Corp.',          price:875.20, vol:'41.8M', high52:974.00 },
+  { sym:'TSLA',  name:'Tesla Inc.',            price:248.60, vol:'98.3M', high52:299.29 },
+  { sym:'AMZN',  name:'Amazon.com Inc.',       price:196.80, vol:'33.4M', high52:242.52 },
+  { sym:'GOOGL', name:'Alphabet Inc.',         price:175.40, vol:'24.7M', high52:207.05 },
+  { sym:'META',  name:'Meta Platforms',        price:518.30, vol:'14.9M', high52:589.43 },
+  { sym:'JPM',   name:'JPMorgan Chase',        price:225.70, vol:'11.2M', high52:260.10 },
+  { sym:'V',     name:'Visa Inc.',             price:296.40, vol:'7.8M',  high52:341.92 },
+  { sym:'BRK.B', name:'Berkshire Hathaway',    price:441.20, vol:'4.3M',  high52:489.79 },
+  { sym:'SPY',   name:'SPDR S&P 500 ETF',      price:521.00, vol:'67.1M', high52:579.54 },
+  { sym:'QQQ',   name:'Invesco QQQ Trust',     price:441.50, vol:'38.9M', high52:503.52 },
+];
+
+const CRYPTOS = [
+  { sym:'BTC',  name:'Bitcoin',   icon:'₿', price:97432, mcap:'$1.87T' },
+  { sym:'ETH',  name:'Ethereum',  icon:'Ξ', price:3842,  mcap:'$462B' },
+  { sym:'SOL',  name:'Solana',    icon:'◎', price:188,   mcap:'$87B' },
+  { sym:'BNB',  name:'BNB Chain', icon:'⬡', price:598,   mcap:'$86B' },
+  { sym:'XRP',  name:'Ripple',    icon:'✕', price:0.63,  mcap:'$36B' },
+  { sym:'ADA',  name:'Cardano',   icon:'₳', price:0.48,  mcap:'$17B' },
+  { sym:'AVAX', name:'Avalanche', icon:'▲', price:37.20, mcap:'$15B' },
+  { sym:'DOGE', name:'Dogecoin',  icon:'Ð', price:0.165, mcap:'$24B' },
+];
+
+const FOREX = [
+  { pair:'EUR/USD', rate:1.0842 }, { pair:'GBP/USD', rate:1.2734 },
+  { pair:'USD/JPY', rate:149.82 }, { pair:'USD/CHF', rate:0.8923 },
+  { pair:'AUD/USD', rate:0.6512 }, { pair:'USD/CAD', rate:1.3612 },
+  { pair:'NZD/USD', rate:0.6021 }, { pair:'EUR/GBP', rate:0.8513 },
+];
+
+const INDICES = [
+  { name:'S&P 500',  sym:'SPX',  base:5842.21 },
+  { name:'NASDAQ',   sym:'NDX',  base:18764.53 },
+  { name:'DOW',      sym:'DJIA', base:42891.10 },
+  { name:'VIX',      sym:'VIX',  base:17.43 },
+  { name:'Russell',  sym:'RUT',  base:2089.45 },
+];
+
+const NEWS_ITEMS = [
+  { cat:'Equities', title:'Fed signals potential rate cut as inflation cools to 2.8%', time:'2h ago', img:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=70' },
+  { cat:'Crypto', title:'Bitcoin consolidates above $95K as ETF inflows hit weekly record', time:'3h ago', img:'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&q=70' },
+  { cat:'Macro', title:'Jobs report beats expectations — 220K added vs 185K forecast', time:'5h ago', img:'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&q=70' },
+  { cat:'Tech', title:'NVIDIA crushes earnings estimates, raises guidance 18% for Q3', time:'6h ago', img:'https://images.unsplash.com/photo-1642790551116-18e150f248e3?w=400&q=70' },
+  { cat:'Energy', title:'Oil slips below $80/barrel as OPEC+ hints at production increase', time:'8h ago', img:'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&q=70' },
+  { cat:'Forex', title:'Dollar weakens as euro gains on ECB hawkish tone', time:'9h ago', img:'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?w=400&q=70' },
+];
+
+let stockData = STOCKS.map(s => ({ ...s, change: 0, changePct: 0 }));
+let cryptoData = CRYPTOS.map(c => ({ ...c, change: 0 }));
+let forexData = FOREX.map(f => ({ ...f, change: 0 }));
+let indicesData = INDICES.map(i => ({ ...i, current: i.base, change: 0 }));
+
+function rnd(min, max) { return Math.random() * (max - min) + min; }
+function fmtChg(val, pct) {
+  const dir = val >= 0; const arrow = dir ? '▲' : '▼';
+  return `<span class="${dir?'td-up':'td-dn'}">${arrow} ${Math.abs(val).toFixed(2)} (${Math.abs(pct).toFixed(2)}%)</span>`;
+}
+
+function updateData() {
+  stockData = stockData.map(s => {
+    const chgPct = rnd(-3, 3);
+    const chg = s.price * chgPct / 100;
+    return { ...s, price: s.price + chg * 0.1, change: s.change + chg * 0.05, changePct: s.changePct + chgPct * 0.05 };
+  });
+  cryptoData = cryptoData.map(c => {
+    const chg = rnd(-5, 5);
+    return { ...c, change: c.change * 0.9 + chg * 0.1 };
+  });
+  forexData = forexData.map(f => {
+    const chg = rnd(-0.5, 0.5);
+    return { ...f, rate: f.rate * (1 + chg / 100 * 0.1), change: f.change * 0.9 + chg * 0.1 };
+  });
+  indicesData = indicesData.map(i => {
+    const chg = rnd(-1, 1);
+    const newVal = i.current * (1 + chg / 100 * 0.1);
+    return { ...i, current: newVal, change: i.change * 0.9 + chg * 0.1 };
+  });
+}
+
+function renderIndices() {
+  const el = document.getElementById('indicesGrid');
+  if (!el) return;
+  el.innerHTML = indicesData.map(i => {
+    const up = i.change >= 0;
+    const pts = sparkPoints();
+    return `<div class="idx-card">
+      <div class="idx-name">${i.name}</div>
+      <div class="idx-value">${i.sym === 'VIX' ? i.current.toFixed(2) : i.current.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(i.change).toFixed(2)} (${Math.abs(i.change/i.base*100).toFixed(2)}%)</div>
+      <div class="idx-mini-chart"><svg viewBox="0 0 100 40" preserveAspectRatio="none">
+        <polyline points="${pts}" fill="none" stroke="${up?'#22c55e':'#ef4444'}" stroke-width="1.5"/>
+      </svg></div>
+    </div>`;
+  }).join('');
+}
+
+function sparkPoints() {
+  let pts = '', y = 20;
+  for (let x = 0; x <= 100; x += 10) {
+    y = Math.max(5, Math.min(35, y + rnd(-5, 5)));
+    pts += `${x},${y} `;
+  }
+  return pts.trim();
+}
+
+function renderMovers() {
+  const sorted = [...stockData].sort((a, b) => b.changePct - a.changePct);
+  const gainers = sorted.slice(0, 5);
+  const losers = sorted.slice(-5).reverse();
+  const html = arr => arr.map(s => `
+    <div class="mover-row">
+      <span class="mover-sym">${s.sym}</span>
+      <span class="mover-price">$${s.price.toFixed(2)}</span>
+      <span class="mover-chg ${s.changePct>=0?'up':'dn'}">${s.changePct>=0?'+':''}${s.changePct.toFixed(2)}%</span>
+    </div>`).join('');
+  const g = document.getElementById('gainers'); if (g) g.innerHTML = html(gainers);
+  const l = document.getElementById('losers');  if (l) l.innerHTML = html(losers);
+}
+
+function renderTable(filter = '') {
+  const tbody = document.getElementById('stocksTbody');
+  if (!tbody) return;
+  const data = filter ? stockData.filter(s => s.sym.toLowerCase().includes(filter.toLowerCase()) || s.name.toLowerCase().includes(filter.toLowerCase())) : stockData;
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td class="td-sym">${s.sym}</td>
+      <td class="td-name">${s.name}</td>
+      <td>$${s.price.toFixed(2)}</td>
+      <td>${fmtChg(s.change, s.changePct)}</td>
+      <td class="${s.changePct>=0?'td-up':'td-dn'}">${s.changePct>=0?'+':''}${s.changePct.toFixed(2)}%</td>
+      <td>${s.vol}</td>
+      <td>$${s.high52.toFixed(2)}</td>
+    </tr>`).join('');
+}
+
+function renderCrypto() {
+  const el = document.getElementById('cryptoGrid');
+  if (!el) return;
+  el.innerHTML = cryptoData.map(c => {
+    const up = c.change >= 0;
+    const p = c.price > 1000 ? c.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : c.price.toFixed(c.price < 1 ? 4 : 2);
+    return `<div class="crypto-card">
+      <div class="cc-icon">${c.icon}</div>
+      <div class="cc-sym">${c.sym}</div>
+      <div class="cc-name">${c.name}</div>
+      <div class="cc-price">$${p}</div>
+      <div class="cc-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(c.change).toFixed(2)}%</div>
+      <div class="cc-mcap">Mkt Cap: ${c.mcap}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderForex() {
+  const el = document.getElementById('forexGrid');
+  if (!el) return;
+  el.innerHTML = forexData.map(f => {
+    const up = f.change >= 0;
+    return `<div class="fx-card">
+      <span class="fx-pair">${f.pair}</span>
+      <div class="fx-right">
+        <div class="fx-rate">${f.rate.toFixed(4)}</div>
+        <div class="fx-chg ${up?'up':'dn'}">${up?'+':''}${f.change.toFixed(3)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderNews() {
+  const el = document.getElementById('newsGrid');
+  if (!el) return;
+  el.innerHTML = NEWS_ITEMS.map(n => `
+    <div class="news-card">
+      <img class="news-img" src="${n.img}" alt="" loading="lazy"/>
+      <div class="news-body">
+        <div class="news-cat">${n.cat}</div>
+        <h3>${n.title}</h3>
+        <div class="news-meta">${n.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateMarketStatus() {
+  const open = getMarketStatus();
+  const dot = document.getElementById('msDot');
+  const txt = document.getElementById('msText');
+  const time = document.getElementById('msTime');
+  if (dot) { dot.className = `ms-dot${open?'':' closed'}`; }
+  if (txt) txt.textContent = open ? 'NYSE Open' : 'NYSE Closed';
+  if (time) time.textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+}
+
+function renderAll() {
+  updateData();
+  renderIndices();
+  renderMovers();
+  renderTable(document.getElementById('stockSearch')?.value || '');
+  renderCrypto();
+  renderForex();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPage('markets.html');
+  buildTicker('ticker');
+  renderAll();
+  renderNews();
+  updateMarketStatus();
+
+  setInterval(() => { renderAll(); updateMarketStatus(); }, 3000);
+
+  document.getElementById('stockSearch')?.addEventListener('input', e => renderTable(e.target.value));
+  document.getElementById('refreshBtn')?.addEventListener('click', renderAll);
+});
